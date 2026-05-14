@@ -38,7 +38,7 @@ public:
     }
 
 private:
-    LockFreeQueue<T*> freelist_;
+    // LockFreeQueue<T*> freelist_;
 };
 
 } // namespace msgbus
