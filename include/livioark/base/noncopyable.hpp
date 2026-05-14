@@ -1,0 +1,14 @@
+#pragma once
+
+namespace livio::ark::base {
+class noncopyable {
+protected:
+    noncopyable() = default;
+
+    ~noncopyable() = default;
+
+    noncopyable(const noncopyable &) = delete;
+
+    noncopyable &operator=(const noncopyable &) = delete;
+};
+}
