@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 4.2)
-project(LivioArk VERSION 0.0.0.1)
+project(LivioArk VERSION 0.1.0)
 
 set(CMAKE_CXX_STANDARD 26)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -12,6 +12,14 @@ include(cmake/utils.cmake)
 
 # 依赖（spdlog 等）
 include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/deps.cmake)
+
+# 版本头文件：以 project(VERSION) 为单一真相源，生成 version.hpp
+set(LIVIO_ARK_GENERATED_INCLUDE_DIR ${CMAKE_CURRENT_BINARY_DIR}/generated/include)
+configure_file(
+    ${CMAKE_CURRENT_SOURCE_DIR}/cmake/version.hpp.in
+    ${LIVIO_ARK_GENERATED_INCLUDE_DIR}/livioark/comm/version.hpp
+    @ONLY
+)
 
 # LivioArk 库
 if(LIVIO_ARK_BUILD_SHARED)
@@ -35,6 +43,7 @@ livio_set_output_dirs(LivioArk)
 target_include_directories(LivioArk
     PUBLIC
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+        $<BUILD_INTERFACE:${LIVIO_ARK_GENERATED_INCLUDE_DIR}>
         $<INSTALL_INTERFACE:include>
 )
 

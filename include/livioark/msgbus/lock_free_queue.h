@@ -5,7 +5,7 @@
 #include <memory>
 #include <utility>
 
-namespace msgbus
+namespace livio::ark::msgbus
 {
 
 /// Bounded MPMC lock-free queue (Dmitry Vyukov's algorithm).
@@ -121,4 +121,4 @@ private:
     alignas(64) std::atomic<size_t> dequeue_pos_;
 };
 
-}  // namespace msgbus
+}  // namespace livio::ark::msgbus

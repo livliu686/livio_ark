@@ -28,7 +28,7 @@
 #include <utility>
 #include <vector>
 
-namespace msgbus
+namespace livio::ark::msgbus
 {
 
 // ============ FullPolicy & TypedMessagePool ============
@@ -895,4 +895,4 @@ private:
     std::condition_variable cv_;
 };
 
-}  // namespace msgbus
+}  // namespace livio::ark::msgbus

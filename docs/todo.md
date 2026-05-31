@@ -3,20 +3,20 @@
 > 来源：工程 review（2026-05-31）。按阶段推进，每阶段可独立提交。
 
 ## 阶段 1 — 一致性收口（低风险、高收益）
-- [ ] 统一命名空间为 `livio::ark::<module>`
-  - [ ] `livio_ark::comm` → `livio::ark::comm`（enum_tool.hpp）
-  - [ ] `msgbus` → `livio::ark::msgbus`
-  - [ ] 核对 `livio::ark::base` / `livio::ark::detail` 是否保留
-- [ ] 修正 defer.hpp 结尾残留注释 `// namespace nova::detail`
-- [ ] 版本号单一真相源：CMake `configure_file` 注入 version.hpp（当前 version.hpp=1.0.0 与 project VERSION=0.0.0.1 不一致）
+- [x] 统一命名空间为 `livio::ark::<module>`
+  - [x] `livio_ark::comm` → `livio::ark::comm`（enum_tool.hpp）
+  - [x] `msgbus` → `livio::ark::msgbus`
+  - [x] 核对 `livio::ark::base` / `livio::ark::detail` 是否保留（保留为子命名空间）
+- [x] 修正 defer.hpp 结尾残留注释 `// namespace nova::detail`
+- [x] 版本号单一真相源：CMake `configure_file` 注入 version.hpp（project VERSION=0.1.0）
 
 ## 阶段 2 — 日志库增强
-- [ ] 模板内先 `should_log(level)` 再 `std::format`，避免无谓格式化开销
-- [ ] 默认 logger 缓存，减少每条日志的锁竞争（atomic/一次性缓存）
-- [ ] 增加 `get_level()`
-- [ ] 支持 `std::source_location`（文件/行号）
-- [ ] 增加 `LOG_*_IF` / `LOG_*_ONCE` 宏
-- [ ] 编译期级别裁剪宏（类似 `SPDLOG_ACTIVE_LEVEL` 的 `LIVIO_LOG_LEVEL`）
+- [x] 模板内先 `should_log(level)` 再 `std::format`，避免无谓格式化开销
+- [x] 默认 logger 缓存，减少每条日志的锁竞争（atomic 级别 + atomic shared_ptr 缓存）
+- [x] 增加 `get_level()`（默认与模块）
+- [x] 支持源码位置（`SourceLoc`，由宏注入 `__FILE__/__LINE__/__func__`，pattern 用 `%s:%#:%!`）
+- [x] 增加 `LOG_*_IF` / `LOG_*_ONCE` 宏（默认与模块）
+- [x] 编译期级别裁剪宏（`LIVIO_LOG_ACTIVE_LEVEL`）
 
 ## 阶段 3 — 构建工程化
 - [ ] `install(TARGETS)` + 生成 `LivioArkConfig.cmake`，支持下游 `find_package(LivioArk)`

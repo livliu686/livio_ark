@@ -10,7 +10,7 @@
 #include <mutex>
 #include <vector>
 
-namespace msgbus
+namespace livio::ark::msgbus
 {
 
 struct ITopicSlot
@@ -116,4 +116,4 @@ private:
     std::mutex write_mutex_;  // serializes COW writes
 };
 
-}  // namespace msgbus
+}  // namespace livio::ark::msgbus

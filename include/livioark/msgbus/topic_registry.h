@@ -9,7 +9,7 @@
 #include <string_view>
 #include <unordered_map>
 
-namespace msgbus
+namespace livio::ark::msgbus
 {
 
 /// Thread-safe topic string ↔ ID registry.
@@ -90,4 +90,4 @@ private:
     TopicId next_id_ = 1;  // 0 is kInvalidTopicId; only mutated under unique_lock(mutex_)
 };
 
-}  // namespace msgbus
+}  // namespace livio::ark::msgbus

@@ -14,7 +14,7 @@
 #include <unordered_map>
 #include <vector>
 
-namespace msgbus
+namespace livio::ark::msgbus
 {
 
 /// A trie that indexes wildcard subscription patterns for O(depth) lookup
@@ -299,4 +299,4 @@ private:
     std::mutex write_mutex_;  // serializes COW writes
 };
 
-}  // namespace msgbus
+}  // namespace livio::ark::msgbus

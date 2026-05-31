@@ -7,7 +7,7 @@
 #include <typeinfo>
 #include <utility>
 
-namespace msgbus
+namespace livio::ark::msgbus
 {
 
 /// Compact topic identifier — replaces std::string on the hot path.
@@ -185,4 +185,4 @@ private:
     IMessage* ptr_ = nullptr;
 };
 
-}  // namespace msgbus
+}  // namespace livio::ark::msgbus

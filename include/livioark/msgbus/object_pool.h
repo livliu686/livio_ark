@@ -4,7 +4,7 @@
 
 #include <cstddef>
 
-namespace msgbus
+namespace livio::ark::msgbus
 {
 
 /// Lock-free object pool backed by a bounded freelist queue.
@@ -48,4 +48,4 @@ private:
     LockFreeQueue<T*> freelist_;
 };
 
-}  // namespace msgbus
+}  // namespace livio::ark::msgbus

@@ -3,7 +3,7 @@
 #include <string>
 #include <string_view>
 
-namespace msgbus
+namespace livio::ark::msgbus
 {
 /// MQTT-style topic wildcard matching.
 ///   '*' matches exactly one level   (e.g. "sensor/*/temp")
@@ -135,10 +135,10 @@ struct topic_tag
         return std::string_view(str, N - 1);
     }
 };
-}  // namespace msgbus
+}  // namespace livio::ark::msgbus
 
 /// Compile-time topic validation macro.
 /// Usage: MSGBUS_VALIDATE_TOPIC("sensor/temp")
 #define MSGBUS_VALIDATE_TOPIC(topic)                                      \
-    static_assert(msgbus::TopicValidator<sizeof(topic)>::validate(topic), \
+    static_assert(livio::ark::msgbus::TopicValidator<sizeof(topic)>::validate(topic), \
                   "Invalid MQTT topic: " #topic)

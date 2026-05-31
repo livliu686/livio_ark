@@ -3,7 +3,7 @@
 #include <cstdint>
 #include <functional>
 
-namespace msgbus
+namespace livio::ark::msgbus
 {
 
 using SubscriptionId = uint64_t;
@@ -15,4 +15,4 @@ struct Subscriber
     std::function<void(const T&)> handler;
 };
 
-}  // namespace msgbus
+}  // namespace livio::ark::msgbus

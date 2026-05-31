@@ -1,0 +1,24 @@
+#pragma once
+
+// ==============================================
+// 版本号定义（由 CMake configure_file 自动生成，请勿手改）
+// 单一真相源：CMakeLists.txt 中的 project(... VERSION ...)
+// ==============================================
+
+#define LIVIO_ARK_VERSION_MAJOR @PROJECT_VERSION_MAJOR@
+#define LIVIO_ARK_VERSION_MINOR @PROJECT_VERSION_MINOR@
+#define LIVIO_ARK_VERSION_PATCH @PROJECT_VERSION_PATCH@
+
+// 字符串化宏
+#define LIVIO_ARK_STRINGIFY_IMPL(x) #x
+#define LIVIO_ARK_STRINGIFY(x)      LIVIO_ARK_STRINGIFY_IMPL(x)
+
+// 版本字符串，通过整型转字符串拼接
+#define LIVIO_ARK_VERSION_STRING                                              \
+    LIVIO_ARK_STRINGIFY(LIVIO_ARK_VERSION_MAJOR)                              \
+    "." LIVIO_ARK_STRINGIFY(LIVIO_ARK_VERSION_MINOR) "." LIVIO_ARK_STRINGIFY( \
+        LIVIO_ARK_VERSION_PATCH)
+
+// 整型版本号（便于比较），例如 0.1.0 -> 100
+#define LIVIO_ARK_VERSION \
+    (LIVIO_ARK_VERSION_MAJOR * 10000 + LIVIO_ARK_VERSION_MINOR * 100 + LIVIO_ARK_VERSION_PATCH)

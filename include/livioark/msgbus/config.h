@@ -15,7 +15,7 @@
 #    define MSGBUS_HAS_ATOMIC_SHARED_PTR 0
 #endif
 
-namespace msgbus
+namespace livio::ark::msgbus
 {
 
 // ---------- Tuning constants ----------
@@ -24,4 +24,4 @@ inline constexpr size_t   kDefaultPoolCapacity  = 8192;
 inline constexpr unsigned kSpinThreshold        = 64;
 inline constexpr unsigned kYieldThreshold       = 256;
 
-}  // namespace msgbus
+}  // namespace livio::ark::msgbus

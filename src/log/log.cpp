@@ -4,6 +4,7 @@
 #include <spdlog/sinks/stdout_color_sinks.h>
 #include <spdlog/spdlog.h>
 
+#include <atomic>
 #include <memory>
 #include <mutex>
 #include <string>
@@ -65,6 +66,10 @@ struct Registry
     LogOptions                                                       options;
     std::shared_ptr<spdlog::logger>                                  default_logger;
     std::unordered_map<std::string, std::shared_ptr<spdlog::logger>> modules;
+
+    // 热路径缓存：Level 枚举本身按严重程度递增，可直接比较，无需加锁
+    std::atomic<int>                             default_level{static_cast<int>(Level::Info)};
+    std::atomic<std::shared_ptr<spdlog::logger>> default_cache;
 };
 
 Registry& registry()
@@ -116,6 +121,8 @@ void init(const LogOptions& options)
     std::lock_guard lock(reg.mutex);
     reg.options        = options;
     reg.default_logger = make_logger(options.logger_name, options);
+    reg.default_level.store(static_cast<int>(options.level), std::memory_order_relaxed);
+    reg.default_cache.store(reg.default_logger, std::memory_order_release);
 }
 
 void set_level(Level level)
@@ -123,6 +130,7 @@ void set_level(Level level)
     auto&           reg = registry();
     std::lock_guard lock(reg.mutex);
     reg.options.level = level;
+    reg.default_level.store(static_cast<int>(level), std::memory_order_relaxed);
     ensure_default(reg)->set_level(to_spdlog_level(level));
 }
 
@@ -131,6 +139,32 @@ void set_level(std::string_view mod, Level level)
     auto&           reg = registry();
     std::lock_guard lock(reg.mutex);
     ensure_module(reg, mod)->set_level(to_spdlog_level(level));
+}
+
+Level get_level() noexcept
+{
+    return static_cast<Level>(registry().default_level.load(std::memory_order_relaxed));
+}
+
+Level get_level(std::string_view mod)
+{
+    auto&           reg = registry();
+    std::lock_guard lock(reg.mutex);
+    auto            logger = ensure_module(reg, mod);
+    return static_cast<Level>(logger->level());
+}
+
+bool should_log(Level level) noexcept
+{
+    // Level 枚举顺序即严重程度顺序，可与缓存阈值直接比较，避免加锁与格式化
+    return static_cast<int>(level) >= registry().default_level.load(std::memory_order_relaxed);
+}
+
+bool should_log(std::string_view mod, Level level)
+{
+    auto&           reg = registry();
+    std::lock_guard lock(reg.mutex);
+    return ensure_module(reg, mod)->should_log(to_spdlog_level(level));
 }
 
 void flush()
@@ -148,18 +182,21 @@ void flush()
 namespace detail
 {
 
-void log(Level level, std::string_view msg)
+void log(Level level, std::string_view msg, const SourceLoc& loc)
 {
-    auto&                           reg = registry();
-    std::shared_ptr<spdlog::logger> logger;
+    auto& reg = registry();
+    // 热路径：先尝试无锁读取已缓存的默认 logger
+    auto logger = reg.default_cache.load(std::memory_order_acquire);
+    if (!logger)
     {
         std::lock_guard lock(reg.mutex);
         logger = ensure_default(reg);
+        reg.default_cache.store(logger, std::memory_order_release);
     }
-    logger->log(to_spdlog_level(level), msg);
+    logger->log(spdlog::source_loc{loc.file, loc.line, loc.func}, to_spdlog_level(level), msg);
 }
 
-void log(std::string_view mod, Level level, std::string_view msg)
+void log(std::string_view mod, Level level, std::string_view msg, const SourceLoc& loc)
 {
     auto&                           reg = registry();
     std::shared_ptr<spdlog::logger> logger;
@@ -167,7 +204,7 @@ void log(std::string_view mod, Level level, std::string_view msg)
         std::lock_guard lock(reg.mutex);
         logger = ensure_module(reg, mod);
     }
-    logger->log(to_spdlog_level(level), msg);
+    logger->log(spdlog::source_loc{loc.file, loc.line, loc.func}, to_spdlog_level(level), msg);
 }
 
 }  // namespace detail
