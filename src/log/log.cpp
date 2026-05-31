@@ -46,8 +46,16 @@ std::vector<spdlog::sink_ptr> create_sinks(const LogOptions& options)
 {
     std::vector<spdlog::sink_ptr> sinks;
 
-    // 控制台 sink
-    sinks.push_back(std::make_shared<spdlog::sinks::stdout_color_sink_mt>());
+    // 控制台 sink：Debug 模式始终添加；Release 模式由 options.console 控制
+#if defined(NDEBUG)
+    const bool enable_console = options.console;
+#else
+    const bool enable_console = true;
+#endif
+    if (enable_console)
+    {
+        sinks.push_back(std::make_shared<spdlog::sinks::stdout_color_sink_mt>());
+    }
 
     // 文件 sink（如果指定）
     if (!options.file_path.empty())
@@ -72,7 +80,7 @@ struct Registry
     std::atomic<std::shared_ptr<spdlog::logger>> default_cache;
 };
 
-Registry& registry()
+static inline Registry& registry()
 {
     static Registry instance;
     return instance;

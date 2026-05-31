@@ -31,6 +31,8 @@ struct LogOptions
     std::size_t max_file_size = 10 * 1024 * 1024;  // 单文件最大字节
     std::size_t max_files     = 3;                 // 保留文件数
     bool        truncate      = false;             // 是否截断文件
+    // 控制台输出开关：仅在 Release 下生效；Debug 模式始终输出到控制台
+    bool console = true;
 };
 
 // 初始化默认日志系统（可选；首次使用时也会以默认参数自动初始化）
