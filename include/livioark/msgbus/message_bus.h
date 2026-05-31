@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "msgbus/config.h"
 #include "msgbus/lock_free_queue.h"
@@ -34,24 +34,21 @@ namespace msgbus {
 
 /// Queue-full policy for publish().
 enum class FullPolicy {
-    ReturnFalse,   ///< Return false immediately (default, zero overhead).
-    DropOldest,    ///< Drop the oldest message; always succeeds.
-    DropNewest,    ///< Drop the new message silently; always returns true.
-    Block,         ///< Block until space is available (or bus stops).
-    BlockTimeout,  ///< Block up to a timeout, then return false.
+    ReturnFalse,  ///< Return false immediately (default, zero overhead).
+    DropOldest,   ///< Drop the oldest message; always succeeds.
+    DropNewest,   ///< Drop the new message silently; always returns true.
+    Block,        ///< Block until space is available (or bus stops).
+    BlockTimeout, ///< Block up to a timeout, then return false.
 };
 
 /// Per-type static object pool and recycler.
-template <typename T>
-struct TypedMessagePool {
+template <typename T> struct TypedMessagePool {
     static ObjectPool<TypedMessage<T>>& instance() {
         static ObjectPool<TypedMessage<T>> pool(kDefaultPoolCapacity);
         return pool;
     }
 
-    static void recycle(IMessage* msg) {
-        instance().release(static_cast<TypedMessage<T>*>(msg));
-    }
+    static void recycle(IMessage* msg) { instance().release(static_cast<TypedMessage<T>*>(msg)); }
 };
 
 class MessageBus {
@@ -62,17 +59,13 @@ public:
     /// @param num_dispatchers  Number of dispatcher threads (0 = auto = hardware_concurrency).
     /// @param policy           Queue-full strategy for publish().
     /// @param publish_timeout  Timeout for FullPolicy::BlockTimeout.
-    explicit MessageBus(size_t queue_capacity = kDefaultQueueCapacity,
-                        unsigned num_dispatchers = 1,
+    explicit MessageBus(size_t queue_capacity = kDefaultQueueCapacity, unsigned num_dispatchers = 1,
                         FullPolicy policy = FullPolicy::ReturnFalse,
                         std::chrono::milliseconds publish_timeout = std::chrono::milliseconds{100})
-        : policy_(policy)
-        , publish_timeout_(publish_timeout)
-        , queue_(queue_capacity)
-        , queue_capacity_(queue_capacity)
-        , num_dispatchers_(num_dispatchers == 0
-              ? std::max(1u, std::thread::hardware_concurrency())
-              : num_dispatchers) {}
+        : policy_(policy), publish_timeout_(publish_timeout), queue_(queue_capacity),
+          queue_capacity_(queue_capacity),
+          num_dispatchers_(num_dispatchers == 0 ? std::max(1u, std::thread::hardware_concurrency())
+                                                : num_dispatchers) {}
 
     ~MessageBus() { stop(); }
 
@@ -112,7 +105,8 @@ public:
         // Wake all sleeping threads
         cv_.notify_all();
         cv_not_full_.notify_all(); // wake blocked publishers
-        for (auto& wcv : worker_cvs_) wcv->notify_all();
+        for (auto& wcv : worker_cvs_)
+            wcv->notify_all();
 
         if (dispatchers_.size() > 1) {
             // Multi-dispatcher: join router first (dispatchers_[0]) so it
@@ -143,8 +137,7 @@ public:
     /// Publish a message to a topic.
     /// Behavior on queue full depends on the FullPolicy set at construction.
     /// Returns false only for ReturnFalse (queue full) or BlockTimeout (timed out).
-    template <typename T>
-    bool publish(std::string_view topic, T msg) {
+    template <typename T> bool publish(std::string_view topic, T msg) {
         TopicId tid = registry_.resolve(topic);
         auto& pool = TypedMessagePool<T>::instance();
         TypedMessage<T>* raw = pool.acquire();
@@ -154,8 +147,30 @@ public:
             raw = new TypedMessage<T>(tid, std::move(msg));
         }
         raw->recycler_ = &TypedMessagePool<T>::recycle;
-        // Cache topic string for wildcard dispatch (avoids registry reverse lookup)
         raw->set_topic_sv(registry_.to_string(tid));
+        return enqueueMessage(MessagePtr::adopt(raw));
+    }
+
+    /// Publish with a drop callback, invoked when DropOldest/DropNewest discards the message.
+    /// @param on_drop  Callback(topic, data) invoked with the dropped message's topic and data.
+    template <typename T, typename OnDrop>
+    bool publish(std::string_view topic, T msg, OnDrop&& on_drop) {
+        TopicId tid = registry_.resolve(topic);
+        auto& pool = TypedMessagePool<T>::instance();
+        TypedMessage<T>* raw = pool.acquire();
+        if (raw) {
+            raw->reset(tid, std::move(msg));
+        } else {
+            raw = new TypedMessage<T>(tid, std::move(msg));
+        }
+        raw->recycler_ = &TypedMessagePool<T>::recycle;
+        raw->set_topic_sv(registry_.to_string(tid));
+        if constexpr (requires { static_cast<bool>(on_drop); }) {
+            if (!on_drop) return enqueueMessage(MessagePtr::adopt(raw));
+        }
+        raw->on_drop_ = [cb = std::forward<OnDrop>(on_drop)](IMessage& m) {
+            cb(m.topic_sv(), static_cast<TypedMessage<T>&>(m).data_);
+        };
         return enqueueMessage(MessagePtr::adopt(raw));
     }
 
@@ -172,16 +187,13 @@ public:
         if (isWildcard(topic)) {
             // Validate: '#' must be the last segment (MQTT rule)
             auto pos = topic.find('#');
-            if (pos != std::string_view::npos &&
-                pos + 1 != topic.size()) {
-                throw std::runtime_error(
-                    "Invalid wildcard pattern: '#' must be the last segment");
+            if (pos != std::string_view::npos && pos + 1 != topic.size()) {
+                throw std::runtime_error("Invalid wildcard pattern: '#' must be the last segment");
             }
 
             // Wildcard subscription: insert into trie index
             auto slot = std::make_shared<TopicSlot<T>>();
-            slot->addSubscriber(
-                std::function<void(const T&)>(std::forward<Handler>(handler)), id);
+            slot->addSubscriber(std::function<void(const T&)>(std::forward<Handler>(handler)), id);
 
             wildcard_trie_.insert(topic, {&typeid(T), slot, id});
 
@@ -190,8 +202,7 @@ public:
         } else {
             TopicId tid = registry_.resolve(topic);
             auto* slot = getOrCreateSlot<T>(tid);
-            slot->addSubscriber(
-                std::function<void(const T&)>(std::forward<Handler>(handler)), id);
+            slot->addSubscriber(std::function<void(const T&)>(std::forward<Handler>(handler)), id);
 
             std::lock_guard<std::mutex> lk(sub_map_mutex_);
             sub_to_topic_[id] = {tid, false};
@@ -227,8 +238,7 @@ public:
     // ============ Coroutine Support ============
 
     /// Coroutine awaitable: co_await bus.async_wait<T>(topic)
-    template <typename T>
-    class AsyncWaitAwaitable {
+    template <typename T> class AsyncWaitAwaitable {
     public:
         AsyncWaitAwaitable(MessageBus& bus, std::string topic)
             : state_(std::make_shared<SharedState>(bus, std::move(topic))) {}
@@ -237,22 +247,21 @@ public:
 
         void await_suspend(std::coroutine_handle<> handle) {
             auto s = state_;
-            s->sub_id = s->bus.template subscribe<T>(s->topic,
-                [s, handle](const T& msg) {
-                    // Guard: ensure handler fires at most once.
-                    // In multi-dispatcher + wildcard scenarios, different topics
-                    // matching the same pattern may trigger this handler from
-                    // different worker threads concurrently.
-                    bool expected = false;
-                    if (!s->fired.compare_exchange_strong(expected, true)) {
-                        return; // Already fired — skip.
-                    }
-                    s->result = msg;
-                    // Ensure result write is visible before the coroutine
-                    // reads it (may resume on a different thread).
-                    std::atomic_thread_fence(std::memory_order_release);
-                    handle.resume();
-                });
+            s->sub_id = s->bus.template subscribe<T>(s->topic, [s, handle](const T& msg) {
+                // Guard: ensure handler fires at most once.
+                // In multi-dispatcher + wildcard scenarios, different topics
+                // matching the same pattern may trigger this handler from
+                // different worker threads concurrently.
+                bool expected = false;
+                if (!s->fired.compare_exchange_strong(expected, true)) {
+                    return; // Already fired — skip.
+                }
+                s->result = msg;
+                // Ensure result write is visible before the coroutine
+                // reads it (may resume on a different thread).
+                std::atomic_thread_fence(std::memory_order_release);
+                handle.resume();
+            });
         }
 
         T await_resume() {
@@ -274,14 +283,12 @@ public:
             SubscriptionId sub_id{0};
             std::optional<T> result;
             std::atomic<bool> fired{false};
-            SharedState(MessageBus& b, std::string t)
-                : bus(b), topic(std::move(t)) {}
+            SharedState(MessageBus& b, std::string t) : bus(b), topic(std::move(t)) {}
         };
         std::shared_ptr<SharedState> state_;
     };
 
-    template <typename T>
-    AsyncWaitAwaitable<T> async_wait(std::string_view topic) {
+    template <typename T> AsyncWaitAwaitable<T> async_wait(std::string_view topic) {
         return AsyncWaitAwaitable<T>(*this, std::string(topic));
     }
 
@@ -294,8 +301,7 @@ public:
 
     // ============ TopicHandle (Cached Publish) ============
 
-    template <typename T>
-    class TopicHandle {
+    template <typename T> class TopicHandle {
     public:
         /// Publish a message through the cached handle (skips resolve + topic hash).
         bool publish(T msg) {
@@ -308,24 +314,41 @@ public:
             }
             raw->recycler_ = &TypedMessagePool<T>::recycle;
             raw->set_topic_sv(topic_sv_);
+            raw->on_drop_ = cached_on_drop_;
             return bus_->enqueueMessage(MessagePtr::adopt(raw));
         }
 
     private:
         friend class MessageBus;
-        TopicHandle(MessageBus* bus, TopicId tid, std::string_view sv)
-            : bus_(bus), tid_(tid), topic_sv_(sv) {}
+        TopicHandle(MessageBus* bus, TopicId tid, std::string_view sv,
+                    std::function<void(IMessage&)> on_drop = {})
+            : bus_(bus), tid_(tid), topic_sv_(sv), cached_on_drop_(std::move(on_drop)) {}
         MessageBus* bus_;
         TopicId tid_;
         std::string_view topic_sv_;
+        std::function<void(IMessage&)> cached_on_drop_;
     };
 
     /// Create a cached handle for high-frequency publishing to the same topic.
     /// The returned handle skips topic resolve on each publish.
-    template <typename T>
-    TopicHandle<T> topic(std::string_view topic) {
+    template <typename T> TopicHandle<T> topic(std::string_view topic) {
         TopicId tid = registry_.resolve(topic);
         return TopicHandle<T>(this, tid, registry_.to_string(tid));
+    }
+
+    /// Create a cached handle with a drop callback for DropOldest/DropNewest.
+    /// The callback is set once at handle creation and reused on every publish.
+    template <typename T, typename OnDrop>
+    TopicHandle<T> topic(std::string_view topic, OnDrop&& on_drop) {
+
+        TopicId tid = registry_.resolve(topic);
+        if constexpr (requires { static_cast<bool>(on_drop); }) {
+            if (!on_drop) return TopicHandle<T>(this, tid, registry_.to_string(tid));
+        }
+        return TopicHandle<T>(this, tid, registry_.to_string(tid),
+                              [cb = std::forward<OnDrop>(on_drop)](IMessage& m) {
+                                  cb(m.topic_sv(), static_cast<TypedMessage<T>&>(m).data_);
+                              });
     }
 
 private:
@@ -355,14 +378,13 @@ private:
     template <typename T>
     TopicSlot<T>* checkedSlot(TopicId tid, const std::shared_ptr<ITopicSlot>& sp) {
         if (sp->msg_type && *sp->msg_type != typeid(T)) {
-            throw std::runtime_error(
-                "Type mismatch for topic: " + std::string(registry_.to_string(tid)));
+            throw std::runtime_error("Type mismatch for topic: " +
+                                     std::string(registry_.to_string(tid)));
         }
         return static_cast<TopicSlot<T>*>(sp.get());
     }
 
-    template <typename T>
-    TopicSlot<T>* getOrCreateSlot(TopicId tid) {
+    template <typename T> TopicSlot<T>* getOrCreateSlot(TopicId tid) {
         // Fast path: read snapshot
         {
             auto snap = loadSlots();
@@ -392,9 +414,7 @@ private:
         {
             auto snap = loadSlots();
             auto it = snap->find(tid);
-            if (it != snap->end() &&
-                it->second->msg_type &&
-                *it->second->msg_type == msg->type()) {
+            if (it != snap->end() && it->second->msg_type && *it->second->msg_type == msg->type()) {
                 it->second->dispatch(msg);
             }
         }
@@ -424,21 +444,30 @@ private:
             if (enqueued) wakeDispatcher();
             return enqueued;
 
-        case FullPolicy::DropNewest:
-            enqueued = queue_.try_enqueue(std::move(mptr));
-            if (enqueued) wakeDispatcher();
+        case FullPolicy::DropNewest: {
+            enqueued = queue_.try_enqueue(mptr); // copy: keep mptr valid for notify_drop
+            if (enqueued) {
+                wakeDispatcher();
+            } else {
+                mptr->notify_drop();
+            }
             return true; // always report success
+        }
 
         case FullPolicy::DropOldest: {
             std::lock_guard<std::mutex> lk(publish_mutex_);
             if (!queue_.try_enqueue(mptr)) { // copy (keep mptr valid for retry)
                 MessagePtr oldest;
-                queue_.try_dequeue(oldest); // discard oldest
+                if (queue_.try_dequeue(oldest)) { // discard oldest
+                    oldest->notify_drop();
+                }
                 // Retry — under publish_mutex_ only this producer enqueues,
                 // so after dequeue the slot is available.  Yield between
                 // retries to avoid busy-spinning while holding the lock.
                 while (!queue_.try_enqueue(mptr)) {
-                    if (!queue_.try_dequeue(oldest)) {
+                    if (queue_.try_dequeue(oldest)) {
+                        oldest->notify_drop();
+                    } else {
                         std::this_thread::yield();
                     }
                 }
@@ -478,9 +507,7 @@ private:
         return false; // unreachable
     }
 
-    bool mainDequeue(MessagePtr& msg) {
-        return queue_.try_dequeue(msg);
-    }
+    bool mainDequeue(MessagePtr& msg) { return queue_.try_dequeue(msg); }
 
     void notifyNotFull() {
         if (policy_ == FullPolicy::Block || policy_ == FullPolicy::BlockTimeout) {
@@ -522,7 +549,7 @@ private:
                     std::unique_lock<std::mutex> lk(cv_mutex_);
                     dispatcher_sleeping_.store(true, std::memory_order_release);
                     cv_.wait_for(lk, std::chrono::milliseconds(1),
-                        [this] { return !running_.load(std::memory_order_acquire); });
+                                 [this] { return !running_.load(std::memory_order_acquire); });
                     dispatcher_sleeping_.store(false, std::memory_order_release);
                 }
             }
@@ -557,7 +584,7 @@ private:
                     std::unique_lock<std::mutex> lk(cv_mutex_);
                     dispatcher_sleeping_.store(true, std::memory_order_release);
                     cv_.wait_for(lk, std::chrono::milliseconds(1),
-                        [this] { return !running_.load(std::memory_order_acquire); });
+                                 [this] { return !running_.load(std::memory_order_acquire); });
                     dispatcher_sleeping_.store(false, std::memory_order_release);
                 }
             }
@@ -600,7 +627,7 @@ private:
                     std::unique_lock<std::mutex> lk(wcv_mu);
                     worker_sleeping_[worker_id].store(true, std::memory_order_release);
                     wcv.wait_for(lk, std::chrono::milliseconds(1),
-                        [this] { return !running_.load(std::memory_order_acquire); });
+                                 [this] { return !running_.load(std::memory_order_acquire); });
                     worker_sleeping_[worker_id].store(false, std::memory_order_release);
                 }
             }
@@ -633,7 +660,7 @@ private:
 
     // Main queue (MPMC, used by all policies)
     LockFreeQueue<MessagePtr> queue_;
-    std::mutex publish_mutex_;              // serializes DropOldest dequeue+enqueue
+    std::mutex publish_mutex_; // serializes DropOldest dequeue+enqueue
 
     // Backpressure signaling for Block / BlockTimeout
     std::mutex cv_not_full_mutex_;
@@ -653,14 +680,12 @@ private:
 
     // Exact-match slots (RCU: immutable snapshot, lock-free read path)
 #if MSGBUS_HAS_ATOMIC_SHARED_PTR
-    std::atomic<std::shared_ptr<const SlotMap>> slots_{
-        std::make_shared<const SlotMap>()};
+    std::atomic<std::shared_ptr<const SlotMap>> slots_{std::make_shared<const SlotMap>()};
 #else
-    mutable std::mutex slots_mutex_;           // fallback: protects snapshot copy
-    std::shared_ptr<const SlotMap> slots_{
-        std::make_shared<const SlotMap>()};
+    mutable std::mutex slots_mutex_; // fallback: protects snapshot copy
+    std::shared_ptr<const SlotMap> slots_{std::make_shared<const SlotMap>()};
 #endif
-    std::mutex slots_write_mutex_;             // serializes COW writes
+    std::mutex slots_write_mutex_; // serializes COW writes
 
     // Wildcard subscriptions (trie-indexed, internally RCU-synchronized)
     WildcardTrie wildcard_trie_;

@@ -1,7 +1,8 @@
-#pragma once
+﻿#pragma once
 
 #include <atomic>
 #include <cstdint>
+#include <functional>
 #include <string_view>
 #include <typeinfo>
 #include <utility>
@@ -16,6 +17,7 @@ inline constexpr TopicId kInvalidTopicId = 0;
 struct IMessage {
     std::atomic<int> ref_count_{0};
     void (*recycler_)(IMessage*) = nullptr;
+    std::function<void(IMessage&)> on_drop_;
 
     virtual ~IMessage() = default;
     virtual TopicId topic_id() const = 0;
@@ -25,31 +27,35 @@ struct IMessage {
     std::string_view topic_sv() const noexcept { return topic_sv_; }
     void set_topic_sv(std::string_view sv) noexcept { topic_sv_ = sv; }
 
-    void add_ref() noexcept {
-        ref_count_.fetch_add(1, std::memory_order_relaxed);
-    }
+    void add_ref() noexcept { ref_count_.fetch_add(1, std::memory_order_relaxed); }
 
     /// Returns true when ref count drops to zero.
-    bool release_ref() noexcept {
-        return ref_count_.fetch_sub(1, std::memory_order_acq_rel) == 1;
+    bool release_ref() noexcept { return ref_count_.fetch_sub(1, std::memory_order_acq_rel) == 1; }
+
+    /// Invoke and clear the drop callback.
+    void notify_drop() {
+        if (on_drop_) {
+            auto cb = std::move(on_drop_);
+            on_drop_ = nullptr;
+            cb(*this);
+        }
     }
 
 private:
     std::string_view topic_sv_;
 };
 
-template <typename T>
-struct TypedMessage : IMessage {
+template <typename T> struct TypedMessage : IMessage {
     TopicId topic_id_;
     T data_;
 
-    TypedMessage(TopicId topic_id, T data)
-        : topic_id_(topic_id), data_(std::move(data)) {}
+    TypedMessage(TopicId topic_id, T data) : topic_id_(topic_id), data_(std::move(data)) {}
 
     /// Reset a pooled object for reuse (integer assign instead of string copy).
     void reset(TopicId topic_id, T data) {
         ref_count_.store(0, std::memory_order_relaxed);
         recycler_ = nullptr;
+        on_drop_ = nullptr;
         topic_id_ = topic_id;
         data_ = std::move(data);
     }
@@ -87,9 +93,7 @@ public:
         return *this;
     }
 
-    MessagePtr(MessagePtr&& o) noexcept : ptr_(o.ptr_) {
-        o.ptr_ = nullptr;
-    }
+    MessagePtr(MessagePtr&& o) noexcept : ptr_(o.ptr_) { o.ptr_ = nullptr; }
 
     MessagePtr& operator=(MessagePtr&& o) noexcept {
         if (this != &o) {

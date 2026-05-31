@@ -16,9 +16,17 @@ include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/deps.cmake)
 # LivioArk 库
 if(LIVIO_ARK_BUILD_SHARED)
     add_library(LivioArk SHARED src/log/log.cpp)
-    target_compile_definitions(LivioArk PRIVATE LIVIO_ARK_BUILD_SHARED)
+    # 仅在构建动态库本身时导出符号（PRIVATE，不传播给消费者）
+    target_compile_definitions(LivioArk PRIVATE LIVIO_ARK_EXPORTS)
+    # 非 Windows 下默认隐藏符号，仅 LIVIO_ARK_API 标注的符号可见
+    set_target_properties(LivioArk PROPERTIES
+        CXX_VISIBILITY_PRESET hidden
+        VISIBILITY_INLINES_HIDDEN ON
+    )
 else()
     add_library(LivioArk STATIC src/log/log.cpp)
+    # 静态库：构建与消费时都不加导出/导入修饰（PUBLIC 传播给消费者）
+    target_compile_definitions(LivioArk PUBLIC LIVIO_ARK_STATIC)
 endif()
 
 livio_set_compiler_options(LivioArk)

@@ -30,7 +30,15 @@
 #endif
 
 // C++ 版本检查（强制 C++20 及以上）
-#if __cplusplus < 202002L
+// 注意: MSVC 下 __cplusplus 默认恒为 199711L（除非 /Zc:__cplusplus），
+//       需改用 _MSVC_LANG 判断实际语言标准。
+#if defined(_MSVC_LANG)
+#define LIVIO_ARK_CPLUSPLUS _MSVC_LANG
+#else
+#define LIVIO_ARK_CPLUSPLUS __cplusplus
+#endif
+
+#if LIVIO_ARK_CPLUSPLUS < 202002L
 #error "LivioArk requires C++20 or later. Please enable C++20 in your compiler."
 #endif
 #define LIVIO_ARK_CPP20 1
@@ -42,5 +50,5 @@
 #define LIVIO_ARK_DECL_IMPORT __declspec(dllimport)
 #else
 #define LIVIO_ARK_DECL_EXPORT __attribute__((visibility("default")))
-#define LIVIO_ARK_DECL_IMPORT
+#define LIVIO_ARK_DECL_IMPORT __attribute__((visibility("default")))
 #endif
