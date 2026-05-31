@@ -4,12 +4,13 @@
 
 namespace log = livio::ark::log;
 
-int main() {
+int main()
+{
     // 可选：自定义初始化（不调用也会以默认参数自动初始化）
     log::LogOptions options;
-    options.level = log::Level::Trace;
+    options.level       = log::Level::Trace;
     options.logger_name = "app";
-    options.file_path = "logs/app.log";  // 同时写入文件（滚动）
+    options.file_path   = "logs/app.log";  // 同时写入文件（滚动）
     log::init(options);
 
     // 默认 logger —— LOG_XXX

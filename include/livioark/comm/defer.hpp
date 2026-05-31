@@ -11,13 +11,18 @@
 
 #include <utility>
 
-namespace livio::ark::detail {
+namespace livio::ark::detail
+{
 
 template <typename F>
-class ScopeGuard {
+class ScopeGuard
+{
 public:
     explicit ScopeGuard(F&& fn) noexcept : fn_(std::move(fn)) {}
-    ~ScopeGuard() { fn_(); }
+    ~ScopeGuard()
+    {
+        fn_();
+    }
 
     ScopeGuard(const ScopeGuard&)            = delete;
     ScopeGuard& operator=(const ScopeGuard&) = delete;
@@ -29,14 +34,16 @@ private:
 };
 
 // 辅助结构，通过 operator+ 让 DEFER { ... } 语法生效
-struct DeferHelper {
+struct DeferHelper
+{
     template <typename F>
-    ScopeGuard<F> operator+(F&& fn) const noexcept {
+    ScopeGuard<F> operator+(F&& fn) const noexcept
+    {
         return ScopeGuard<F>(std::forward<F>(fn));
     }
 };
 
-}  // namespace nova::detail
+}  // namespace livio::ark::detail
 
 // 拼接宏：生成唯一变量名
 #define DEFER_CAT_(a, b) a##b
@@ -44,6 +51,4 @@ struct DeferHelper {
 
 // DEFER { ... };
 // 展开为: auto _defer_42 = livio::ark::detail::DeferHelper{} + [&]() { ... };
-#define DEFER \
-    auto DEFER_CAT(_DEFER_, __LINE__) \
-    = ::livio::ark::detail::DeferHelper{} + [&]()
+#define DEFER auto DEFER_CAT(_DEFER_, __LINE__) = ::livio::ark::detail::DeferHelper{} + [&]()

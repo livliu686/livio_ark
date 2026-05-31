@@ -13,9 +13,9 @@
 //   消费动态库                    -> dllimport / visibility(default)
 //
 #if defined(LIVIO_ARK_STATIC)
-#define LIVIO_ARK_API
+#    define LIVIO_ARK_API
 #elif defined(LIVIO_ARK_EXPORTS)
-#define LIVIO_ARK_API LIVIO_ARK_DECL_EXPORT
+#    define LIVIO_ARK_API LIVIO_ARK_DECL_EXPORT
 #else
-#define LIVIO_ARK_API LIVIO_ARK_DECL_IMPORT
+#    define LIVIO_ARK_API LIVIO_ARK_DECL_IMPORT
 #endif

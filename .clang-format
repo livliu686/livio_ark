@@ -1,0 +1,66 @@
+# LivioArk .clang-format
+# 基于 LLVM 风格的主流配置，按项目偏好定制
+---
+Language: Cpp
+BasedOnStyle: LLVM
+Standard: c++20
+
+# ---------- 缩进 ----------
+IndentWidth: 4
+TabWidth: 4
+UseTab: Never
+ContinuationIndentWidth: 4
+ConstructorInitializerIndentWidth: 4
+AccessModifierOffset: -4
+NamespaceIndentation: None
+IndentCaseLabels: true
+IndentPPDirectives: AfterHash
+
+# ---------- 大括号换行（Allman：左括号另起一行） ----------
+BreakBeforeBraces: Allman
+
+# ---------- 对齐 ----------
+AlignTrailingComments: true        # 注释对齐
+AlignConsecutiveAssignments: true  # 连续赋值对齐
+AlignConsecutiveDeclarations: true # 连续声明对齐
+AlignConsecutiveMacros: true       # 连续宏定义对齐
+AlignAfterOpenBracket: Align
+AlignOperands: Align
+AlignEscapedNewlines: Left
+PointerAlignment: Left
+ReferenceAlignment: Left
+DerivePointerAlignment: false
+
+# ---------- 行宽与换行 ----------
+ColumnLimit: 100
+AllowShortFunctionsOnASingleLine: Empty
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortLoopsOnASingleLine: false
+AllowShortBlocksOnASingleLine: Empty
+AllowShortCaseLabelsOnASingleLine: false
+BinPackArguments: false
+BinPackParameters: false
+BreakConstructorInitializers: BeforeColon
+BreakBeforeBinaryOperators: None
+AlwaysBreakTemplateDeclarations: Yes
+
+# ---------- 空格 ----------
+SpaceBeforeParens: ControlStatements
+SpaceBeforeAssignmentOperators: true
+SpacesBeforeTrailingComments: 2
+SpaceAfterCStyleCast: false
+SpaceAfterTemplateKeyword: true
+SpacesInParentheses: false
+SpacesInSquareBrackets: false
+SpacesInAngles: false
+Cpp11BracedListStyle: true
+
+# ---------- 其它 ----------
+FixNamespaceComments: true
+SortIncludes: CaseInsensitive
+IncludeBlocks: Preserve
+KeepEmptyLinesAtTheStartOfBlocks: false
+MaxEmptyLinesToKeep: 1
+CompactNamespaces: false
+ReflowComments: true
+...
