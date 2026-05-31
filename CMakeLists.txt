@@ -4,13 +4,25 @@ project(LivioArk VERSION 0.0.0.1)
 set(CMAKE_CXX_STANDARD 26)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+# cmake 工具集
+list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
+include(cmake/options.cmake)
+include(cmake/compiler.cmake)
+include(cmake/utils.cmake)
+
 # 依赖（spdlog 等）
 include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/deps.cmake)
 
-# LivioArk 共享库
-add_library(LivioArk SHARED
-    src/log/log.cpp
-)
+# LivioArk 库
+if(LIVIO_ARK_BUILD_SHARED)
+    add_library(LivioArk SHARED src/log/log.cpp)
+    target_compile_definitions(LivioArk PRIVATE LIVIO_ARK_BUILD_SHARED)
+else()
+    add_library(LivioArk STATIC src/log/log.cpp)
+endif()
+
+livio_set_compiler_options(LivioArk)
+livio_set_output_dirs(LivioArk)
 
 target_include_directories(LivioArk
     PUBLIC
@@ -21,12 +33,16 @@ target_include_directories(LivioArk
 # spdlog 作为 PRIVATE 依赖：仅在实现文件内部使用，不对外暴露头文件
 target_link_libraries(LivioArk PRIVATE spdlog::spdlog)
 
-# 导出宏配置
-target_compile_definitions(LivioArk PRIVATE LIVIO_ARK_BUILD_SHARED)
-
 # 示例
-option(LIVIO_ARK_BUILD_EXAMPLES "Build examples" ON)
 if(LIVIO_ARK_BUILD_EXAMPLES)
-    add_executable(log_example examples/log_example.cpp)
-    target_link_libraries(log_example PRIVATE LivioArk)
+    livio_add_example(log_example examples/log_example.cpp)
 endif()
+
+# 测试
+if(LIVIO_ARK_BUILD_TESTS)
+    enable_testing()
+    include(cmake/testing.cmake)
+    add_subdirectory(tests)
+endif()
+
+livio_print_config()
