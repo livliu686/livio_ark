@@ -10,7 +10,7 @@ namespace livio::ark::log
 {
 
 // 日志级别枚举
-enum class Level
+enum class Level : uint8_t
 {
     Trace,
     Debug,

@@ -42,6 +42,7 @@ livio_set_output_dirs(LivioArk)
 
 target_include_directories(LivioArk
     PUBLIC
+        $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
         $<BUILD_INTERFACE:${LIVIO_ARK_GENERATED_INCLUDE_DIR}>
         $<INSTALL_INTERFACE:include>
@@ -52,7 +53,7 @@ target_link_libraries(LivioArk PRIVATE spdlog::spdlog)
 
 # 示例
 if(LIVIO_ARK_BUILD_EXAMPLES)
-    livio_add_example(log_example examples/log_example.cpp)
+    add_subdirectory(examples)
 endif()
 
 # 测试

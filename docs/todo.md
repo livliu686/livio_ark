@@ -49,3 +49,19 @@
 ## 阶段 7 — 文档 / CI
 - [ ] 编写 README（用法、构建、API；当前为空）
 - [ ] GitHub Actions：Windows + Linux，shared/static 构建矩阵
+
+## 阶段 8 — UT 补充计划（本次 review 新增）
+- [ ] [UT][log] `get_level()/set_level()` 行为断言：设置后可稳定读回，模块级与默认级互不影响
+- [ ] [UT][log] `should_log()` 阈值断言：不同级别下返回值正确（含模块 logger）
+- [ ] [UT][log] `LOG_*_ONCE` / `LOGM_*_ONCE` 只触发一次（并发场景下仍只记录一次）
+- [ ] [UT][log] `LOG_*_IF` / `LOGM_*_IF` 条件为假时不触发格式化路径（可用副作用计数器断言）
+- [ ] [UT][log] 编译期裁剪回归：`LIVIO_LOG_ACTIVE_LEVEL` 生效（低级别日志宏被裁剪）
+- [ ] [UT][comm] 逐头包含编译测试：`include/livioark/comm/*.hpp` 任意单头可独立编译
+- [ ] [UT][msgbus] 先把 `msgbus` 纳入测试编译目标，确保 10 个头至少有编译级验证
+- [ ] [UT][msgbus] 单线程分发：publish/subscribe 基本收发与 topic type mismatch 异常路径
+- [ ] [UT][msgbus] 多分发线程：同 topic 保序、不同 topic 并发分发
+- [ ] [UT][msgbus] 背压策略覆盖：ReturnFalse/DropOldest/DropNewest/Block/BlockTimeout
+- [ ] [UT][msgbus] 通配符订阅：`*` 与 `#` 匹配规则及非法 pattern 校验
+- [ ] [UT][msgbus] `async_wait` 协程路径：只触发一次、析构自动退订、超时/停机边界
+- [ ] [UT][msgbus] handler 内 `unsubscribe` 重入安全，确保当前回调完成且后续不再触发
+- [ ] [UT][build] CMake 测试链路回归：本地 thirdparty / find_package / FetchContent 三条路径至少各验证一次

@@ -43,6 +43,8 @@ Thumbs.db
 *.log
 *.tmp
 *.temp
+log/
+logs/
 
 # Test and coverage files
 *.gcda

@@ -10,6 +10,7 @@ include(CTest)
 
 # 允许通过缓存变量覆盖：是否允许在线拉取、拉取的 git 仓库与 tag
 option(LIVIO_ARK_FETCH_GTEST "Allow fetching GoogleTest online when not found locally" ON)
+option(LIVIO_ARK_GTEST_BUILD_SHARED "Build GoogleTest as shared libraries" OFF)
 set(LIVIO_ARK_GTEST_REPOSITORY "https://gitee.com/mirrors/googletest.git"
     CACHE STRING "GoogleTest git repository URL used by FetchContent")
 set(LIVIO_ARK_GTEST_TAG "v1.15.2" CACHE STRING "GoogleTest git tag used by FetchContent")
@@ -19,6 +20,12 @@ set(_livio_gtest_available FALSE)
 # gtest 公共构建选项（内置与在线拉取共用）
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 set(INSTALL_GTEST OFF CACHE BOOL "" FORCE)
+set(_livio_prev_build_shared_libs ${BUILD_SHARED_LIBS})
+if(LIVIO_ARK_GTEST_BUILD_SHARED)
+    set(BUILD_SHARED_LIBS ON)
+else()
+    set(BUILD_SHARED_LIBS OFF)
+endif()
 
 if(EXISTS "${CMAKE_SOURCE_DIR}/thirdparty/googletest/CMakeLists.txt")
     # 1) 项目内置，离线可用
@@ -60,6 +67,9 @@ else()
     endif()
 endif()
 
+# 恢复父工程 BUILD_SHARED_LIBS，避免影响后续 target
+set(BUILD_SHARED_LIBS ${_livio_prev_build_shared_libs})
+
 if(NOT _livio_gtest_available)
     message(WARNING
         "GoogleTest not found (no thirdparty/googletest, find_package(GTest) failed, "
@@ -98,6 +108,14 @@ function(livio_add_test)
         GTest::gmock
         ${ARG_LIBS}
     )
+
+    # Windows: 将测试目标的运行时 DLL 复制到测试目录，避免 ctest 发现/执行时缺失依赖 (0xc0000135)
+    if(WIN32)
+        add_custom_command(TARGET ${ARG_NAME} POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy -t $<TARGET_FILE_DIR:${ARG_NAME}> $<TARGET_RUNTIME_DLLS:${ARG_NAME}>
+            COMMAND_EXPAND_LISTS
+        )
+    endif()
 
     # 自动发现并注册测试用例（PRE_TEST 模式推迟到 ctest 运行时，避免构建期依赖 DLL）
     include(GoogleTest)

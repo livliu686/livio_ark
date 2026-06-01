@@ -3,18 +3,18 @@
 
 #include <string>
 
-namespace log = livio::ark::log;
+namespace ark_log = livio::ark::log;
 
 int main()
 {
     // 可选：自定义初始化（不调用也会以默认参数自动初始化）
-    log::LogOptions options;
-    options.level       = log::Level::Trace;
+    ark_log::LogOptions options;
+    options.level       = ark_log::Level::Trace;
     options.logger_name = "app";
     options.file_path   = "logs/app.log";  // 同时写入文件（滚动）
     // 在格式中加入源码位置：%s=文件名 %#=行号 %!=函数名
     options.pattern = "[%Y-%m-%d %H:%M:%S.%e] [%^%l%$] [%n] [%s:%#] %v";
-    log::init(options);
+    ark_log::init(options);
 
     LOG_INFO("LivioArk 版本 {}", LIVIO_ARK_VERSION_STRING);
 
@@ -32,12 +32,12 @@ int main()
     LOGM_ERROR("db", "查询超时, 耗时 {} ms", 1500);
 
     // 单独调整某个模块的级别
-    log::set_level("module A", log::Level::Warn);
+    ark_log::set_level("module A", ark_log::Level::Warn);
     LOGM_DEBUG("module A", "这条不会输出");
     LOGM_WARN("module A", "这条会输出");
 
     // 查询当前级别
-    LOG_INFO("当前默认级别 = {}", static_cast<int>(log::get_level()));
+    LOG_INFO("当前默认级别 = {}", static_cast<int>(ark_log::get_level()));
 
     // 条件日志：仅当条件为真时记录
     int retry = 5;
@@ -49,6 +49,6 @@ int main()
         LOG_INFO_ONCE("这条只会输出一次 (i={})", i);
     }
 
-    log::flush();
+    ark_log::flush();
     return 0;
 }

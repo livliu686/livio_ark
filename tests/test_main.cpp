@@ -2,11 +2,11 @@
 
 #include "livioark/log/log.hpp"
 
-namespace log = livio::ark::log;
+namespace ark_log = livio::ark::log;
 
 TEST(LogTest, DefaultLoggerDoesNotThrow)
 {
-    log::init();
+    ark_log::init();
     EXPECT_NO_THROW(LOG_INFO("hello {}", 42));
 }
 
@@ -17,6 +17,6 @@ TEST(LogTest, ModuleLoggerDoesNotThrow)
 
 TEST(LogTest, SetLevel)
 {
-    EXPECT_NO_THROW(log::set_level(log::Level::Warn));
-    EXPECT_NO_THROW(log::set_level("module A", log::Level::Error));
+    EXPECT_NO_THROW(ark_log::set_level(ark_log::Level::Warn));
+    EXPECT_NO_THROW(ark_log::set_level("module A", ark_log::Level::Error));
 }
