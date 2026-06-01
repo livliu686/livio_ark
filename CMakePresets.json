@@ -1,0 +1,91 @@
+{
+  "version": 6,
+  "cmakeMinimumRequired": {
+    "major": 4,
+    "minor": 2,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "base-ninja",
+      "hidden": true,
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/${presetName}",
+      "cacheVariables": {
+        "CMAKE_CXX_STANDARD": "20",
+        "LIVIO_ARK_BUILD_TESTS": "ON",
+        "LIVIO_ARK_BUILD_EXAMPLES": "ON"
+      }
+    },
+    {
+      "name": "debug-static",
+      "inherits": "base-ninja",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "LIVIO_ARK_BUILD_SHARED": "OFF",
+        "LIVIO_ARK_GTEST_BUILD_SHARED": "OFF"
+      }
+    },
+    {
+      "name": "debug-shared",
+      "inherits": "base-ninja",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "LIVIO_ARK_BUILD_SHARED": "ON",
+        "LIVIO_ARK_GTEST_BUILD_SHARED": "ON"
+      }
+    },
+    {
+      "name": "release-static",
+      "inherits": "base-ninja",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "LIVIO_ARK_BUILD_SHARED": "OFF",
+        "LIVIO_ARK_GTEST_BUILD_SHARED": "OFF"
+      }
+    },
+    {
+      "name": "release-shared",
+      "inherits": "base-ninja",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "LIVIO_ARK_BUILD_SHARED": "ON",
+        "LIVIO_ARK_GTEST_BUILD_SHARED": "ON"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "build-debug-static",
+      "configurePreset": "debug-static"
+    },
+    {
+      "name": "build-debug-shared",
+      "configurePreset": "debug-shared"
+    },
+    {
+      "name": "build-release-static",
+      "configurePreset": "release-static"
+    },
+    {
+      "name": "build-release-shared",
+      "configurePreset": "release-shared"
+    }
+  ],
+  "testPresets": [
+    {
+      "name": "test-debug-static",
+      "configurePreset": "debug-static",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "test-release-static",
+      "configurePreset": "release-static",
+      "output": {
+        "outputOnFailure": true
+      }
+    }
+  ]
+}

@@ -1,8 +1,8 @@
-﻿#pragma once
+#pragma once
 
-#include "msgbus/config.h"
-#include "msgbus/subscriber.h"
-#include "msgbus/topic_slot.h"
+#include "config.h"
+#include "subscriber.h"
+#include "topic_slot.h"
 
 #include <atomic>
 #include <functional>

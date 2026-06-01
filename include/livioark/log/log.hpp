@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdint>
 #include <format>
 #include <string>
 #include <string_view>
@@ -25,6 +26,7 @@ enum class Level : uint8_t
 struct LogOptions
 {
     Level       level       = Level::Info;
+    Level       flush_level = Level::Warn;
     std::string logger_name = "livio_ark";
     std::string pattern     = "[%Y-%m-%d %H:%M:%S.%e] [%^%l%$] [%n] %v";
     std::string file_path;                         // 空则不写文件

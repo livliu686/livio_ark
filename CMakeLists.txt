@@ -4,6 +4,9 @@ project(LivioArk VERSION 0.1.0)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+include(GNUInstallDirs)
+include(CMakePackageConfigHelpers)
+
 # cmake 工具集
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 include(cmake/options.cmake)
@@ -48,8 +51,11 @@ target_include_directories(LivioArk
         $<INSTALL_INTERFACE:include>
 )
 
-# spdlog 作为 PRIVATE 依赖：仅在实现文件内部使用，不对外暴露头文件
-target_link_libraries(LivioArk PRIVATE spdlog::spdlog)
+# spdlog 作为 PRIVATE 依赖：构建树链接 spdlog::spdlog，安装树链接导出的 LivioArk::spdlog
+target_link_libraries(LivioArk PRIVATE
+    $<BUILD_INTERFACE:spdlog::spdlog>
+    $<INSTALL_INTERFACE:LivioArk::spdlog>
+)
 
 # 示例
 if(LIVIO_ARK_BUILD_EXAMPLES)
@@ -61,6 +67,63 @@ if(LIVIO_ARK_BUILD_TESTS)
     enable_testing()
     include(cmake/testing.cmake)
     add_subdirectory(tests)
+endif()
+
+if(LIVIO_ARK_ENABLE_INSTALL)
+    # 安装与包导出（支持 find_package(LivioArk CONFIG)）
+    install(TARGETS LivioArk
+        EXPORT LivioArkTargets
+        ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+        INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+    )
+
+    if(TARGET spdlog)
+        install(TARGETS spdlog
+            EXPORT LivioArkTargets
+            ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+            LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+            RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+            INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+        )
+        install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/spdlog/include/
+            DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+        )
+    endif()
+
+    install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/include/
+        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+    )
+
+    install(FILES
+        ${LIVIO_ARK_GENERATED_INCLUDE_DIR}/livioark/comm/version.hpp
+        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/livioark/comm
+    )
+
+    configure_package_config_file(
+        ${CMAKE_CURRENT_SOURCE_DIR}/cmake/LivioArkConfig.cmake.in
+        ${CMAKE_CURRENT_BINARY_DIR}/LivioArkConfig.cmake
+        INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/LivioArk
+    )
+
+    write_basic_package_version_file(
+        ${CMAKE_CURRENT_BINARY_DIR}/LivioArkConfigVersion.cmake
+        VERSION ${PROJECT_VERSION}
+        COMPATIBILITY SameMajorVersion
+    )
+
+    install(FILES
+        ${CMAKE_CURRENT_BINARY_DIR}/LivioArkConfig.cmake
+        ${CMAKE_CURRENT_BINARY_DIR}/LivioArkConfigVersion.cmake
+        DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/LivioArk
+    )
+
+    install(EXPORT LivioArkTargets
+        FILE LivioArkTargets.cmake
+        NAMESPACE LivioArk::
+        DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/LivioArk
+    )
 endif()
 
 livio_print_config()

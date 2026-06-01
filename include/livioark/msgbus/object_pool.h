@@ -1,6 +1,6 @@
 #pragma once
 
-#include "msgbus/lock_free_queue.h"
+#include "lock_free_queue.h"
 
 #include <cstddef>
 

@@ -11,6 +11,8 @@ include(CTest)
 # 允许通过缓存变量覆盖：是否允许在线拉取、拉取的 git 仓库与 tag
 option(LIVIO_ARK_FETCH_GTEST "Allow fetching GoogleTest online when not found locally" ON)
 option(LIVIO_ARK_GTEST_BUILD_SHARED "Build GoogleTest as shared libraries" OFF)
+set(LIVIO_ARK_GTEST_LOCAL_SOURCE_DIR "${CMAKE_SOURCE_DIR}/thirdparty/googletest"
+    CACHE PATH "Local GoogleTest source directory")
 set(LIVIO_ARK_GTEST_REPOSITORY "https://gitee.com/mirrors/googletest.git"
     CACHE STRING "GoogleTest git repository URL used by FetchContent")
 set(LIVIO_ARK_GTEST_TAG "v1.15.2" CACHE STRING "GoogleTest git tag used by FetchContent")
@@ -27,20 +29,22 @@ else()
     set(BUILD_SHARED_LIBS OFF)
 endif()
 
-if(EXISTS "${CMAKE_SOURCE_DIR}/thirdparty/googletest/CMakeLists.txt")
+if(EXISTS "${LIVIO_ARK_GTEST_LOCAL_SOURCE_DIR}/CMakeLists.txt")
     # 1) 项目内置，离线可用
-    add_subdirectory(${CMAKE_SOURCE_DIR}/thirdparty/googletest
+    message(STATUS "GoogleTest source mode: local (${LIVIO_ARK_GTEST_LOCAL_SOURCE_DIR})")
+    add_subdirectory(${LIVIO_ARK_GTEST_LOCAL_SOURCE_DIR}
                      ${CMAKE_BINARY_DIR}/thirdparty/googletest)
     set(_livio_gtest_available TRUE)
 else()
     # 2) 系统/包管理器安装
     find_package(GTest CONFIG QUIET)
     if(GTest_FOUND)
+        message(STATUS "GoogleTest source mode: find_package")
         set(_livio_gtest_available TRUE)
     elseif(LIVIO_ARK_FETCH_GTEST)
         # 3) FetchContent 在线拉取
         include(FetchContent)
-        message(STATUS "GoogleTest not found locally, fetching ${LIVIO_ARK_GTEST_TAG} via FetchContent...")
+        message(STATUS "GoogleTest source mode: fetchcontent (${LIVIO_ARK_GTEST_TAG})")
         FetchContent_Declare(
             googletest
             GIT_REPOSITORY ${LIVIO_ARK_GTEST_REPOSITORY}
@@ -105,9 +109,12 @@ function(livio_add_test)
     target_link_libraries(${ARG_NAME} PRIVATE
         GTest::gtest
         GTest::gtest_main
-        GTest::gmock
         ${ARG_LIBS}
     )
+
+    if(TARGET GTest::gmock)
+        target_link_libraries(${ARG_NAME} PRIVATE GTest::gmock)
+    endif()
 
     # Windows: 将测试目标的运行时 DLL 复制到测试目录，避免 ctest 发现/执行时缺失依赖 (0xc0000135)
     if(WIN32)

@@ -1,6 +1,6 @@
-﻿#pragma once
+#pragma once
 
-#include "msgbus/message.h"
+#include "message.h"
 
 #include <functional>
 #include <mutex>

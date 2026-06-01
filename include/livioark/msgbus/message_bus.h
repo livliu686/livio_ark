@@ -1,14 +1,14 @@
-﻿#pragma once
+#pragma once
 
-#include "msgbus/config.h"
-#include "msgbus/lock_free_queue.h"
-#include "msgbus/message.h"
-#include "msgbus/object_pool.h"
-#include "msgbus/subscriber.h"
-#include "msgbus/topic_matcher.h"
-#include "msgbus/topic_registry.h"
-#include "msgbus/topic_slot.h"
-#include "msgbus/wildcard_trie.h"
+#include "config.h"
+#include "lock_free_queue.h"
+#include "message.h"
+#include "object_pool.h"
+#include "subscriber.h"
+#include "topic_matcher.h"
+#include "topic_registry.h"
+#include "topic_slot.h"
+#include "wildcard_trie.h"
 
 #include <algorithm>
 #include <atomic>

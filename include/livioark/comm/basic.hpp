@@ -29,8 +29,16 @@
 // 函数属性
 #define LIVIO_ARK_NORETURN     [[noreturn]]
 #define LIVIO_ARK_NODISCARD    [[nodiscard]]
-#define LIVIO_ARK_FORCE_INLINE [[gnu::always_inline]] inline
-#define LIVIO_ARK_NO_INLINE    [[gnu::noinline]]
+#if defined(_MSC_VER)
+#    define LIVIO_ARK_FORCE_INLINE __forceinline
+#    define LIVIO_ARK_NO_INLINE    __declspec(noinline)
+#elif defined(__GNUC__) || defined(__clang__)
+#    define LIVIO_ARK_FORCE_INLINE inline __attribute__((always_inline))
+#    define LIVIO_ARK_NO_INLINE    __attribute__((noinline))
+#else
+#    define LIVIO_ARK_FORCE_INLINE inline
+#    define LIVIO_ARK_NO_INLINE
+#endif
 
 // 分支预测优化（C++20 标准优先）
 #define LIVIO_ARK_LIKELY(x)   [[likely]] (x)

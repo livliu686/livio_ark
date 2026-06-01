@@ -1,5 +1,11 @@
 #pragma once
 
+#include "basic.hpp"
+
+#include <cstdio>
+#include <cstdlib>
+#include <source_location>
+
 // ==============================================
 // 安全与错误处理宏
 // ==============================================

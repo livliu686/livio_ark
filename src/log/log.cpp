@@ -36,9 +36,9 @@ spdlog::level::level_enum to_spdlog_level(Level level)
             return spdlog::level::critical;
         case Level::Off:
             return spdlog::level::off;
-        default:
-            return spdlog::level::info;
     }
+
+    return spdlog::level::info;
 }
 
 // 创建 sinks
@@ -92,7 +92,7 @@ std::shared_ptr<spdlog::logger> make_logger(const std::string& name, const LogOp
     auto logger = std::make_shared<spdlog::logger>(name, sinks.begin(), sinks.end());
     logger->set_level(to_spdlog_level(options.level));
     logger->set_pattern(options.pattern);
-    logger->flush_on(spdlog::level::warn);
+    logger->flush_on(to_spdlog_level(options.flush_level));
     return logger;
 }
 
