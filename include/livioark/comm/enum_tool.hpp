@@ -4,5 +4,6 @@
 
 namespace livio::ark::comm
 {
-using namespace magic_enum;
+namespace ark_enum = magic_enum;
+
 }

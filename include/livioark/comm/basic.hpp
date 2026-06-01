@@ -40,9 +40,14 @@
 #    define LIVIO_ARK_NO_INLINE
 #endif
 
-// 分支预测优化（C++20 标准优先）
-#define LIVIO_ARK_LIKELY(x)   [[likely]] (x)
-#define LIVIO_ARK_UNLIKELY(x) [[unlikely]] (x)
+// 分支预测优化（表达式上下文可用）
+#if defined(__GNUC__) || defined(__clang__)
+#    define LIVIO_ARK_LIKELY(x)   __builtin_expect(!!(x), 1)
+#    define LIVIO_ARK_UNLIKELY(x) __builtin_expect(!!(x), 0)
+#else
+#    define LIVIO_ARK_LIKELY(x)   (x)
+#    define LIVIO_ARK_UNLIKELY(x) (x)
+#endif
 
 // 标识符拼接
 #define LIVIO_ARK_CONCAT_IMPL(a, b) a##b

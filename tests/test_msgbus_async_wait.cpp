@@ -46,6 +46,35 @@ struct FutureTask
     std::future<T>                         future;
     std::coroutine_handle<promise_type> handle;
 
+    FutureTask(std::future<T>&& f, std::coroutine_handle<promise_type> h)
+        : future(std::move(f)), handle(h)
+    {
+    }
+
+    FutureTask(const FutureTask&) = delete;
+    FutureTask& operator=(const FutureTask&) = delete;
+
+    FutureTask(FutureTask&& other) noexcept
+        : future(std::move(other.future)), handle(other.handle)
+    {
+        other.handle = {};
+    }
+
+    FutureTask& operator=(FutureTask&& other) noexcept
+    {
+        if (this != &other)
+        {
+            if (handle)
+            {
+                handle.destroy();
+            }
+            future = std::move(other.future);
+            handle = other.handle;
+            other.handle = {};
+        }
+        return *this;
+    }
+
     ~FutureTask()
     {
         if (handle)

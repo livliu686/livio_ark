@@ -19,7 +19,10 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Setup CMake
-        uses: lukka/get-cmake@latest
+        uses: lukka/get-cmake@v4
+
+      - name: Setup Ninja
+        uses: seanmiddleditch/gha-setup-ninja@v4
 
       - name: Configure
         run: >
@@ -35,3 +38,10 @@ jobs:
 
       - name: Test
         run: ctest --test-dir build --output-on-failure -C Release
+
+      - name: Install smoke
+        run: |
+          cmake -S . -B build-install -G Ninja -DCMAKE_BUILD_TYPE=Release -DLIVIO_ARK_ENABLE_INSTALL=ON -DLIVIO_ARK_BUILD_TESTS=OFF -DLIVIO_ARK_BUILD_EXAMPLES=OFF -DLIVIO_ARK_BUILD_SHARED=${{ matrix.shared }}
+          cmake --build build-install
+          cmake --install build-install --prefix build-install/prefix
+          cmake -D LIVIO_INSTALL_PREFIX=build-install/prefix -P scripts/verify_install_package.cmake
