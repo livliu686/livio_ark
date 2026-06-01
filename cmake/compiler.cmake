@@ -6,7 +6,7 @@
 #   livio_set_compiler_options(LivioArk)
 
 function(livio_set_compiler_options target)
-    target_compile_features(${target} PUBLIC cxx_std_26)
+    target_compile_features(${target} PUBLIC cxx_std_20)
 
     if(MSVC)
         target_compile_options(${target} PRIVATE

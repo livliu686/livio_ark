@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 4.2)
 project(LivioArk VERSION 0.1.0)
 
-set(CMAKE_CXX_STANDARD 26)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # cmake 工具集

@@ -5,3 +5,5 @@ set(SPDLOG_INSTALL OFF CACHE BOOL "" FORCE)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 add_subdirectory(${CMAKE_SOURCE_DIR}/thirdparty/spdlog ${CMAKE_BINARY_DIR}/thirdparty/spdlog)
+
+
